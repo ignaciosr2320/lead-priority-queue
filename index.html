@@ -1,0 +1,505 @@
+<title>Cola de Leads · Prioridad diaria</title>
+<style>
+  :root {
+    --bg: #eef1ef;
+    --surface: #ffffff;
+    --surface-2: #f5f7f6;
+    --border: #dbe2de;
+    --text: #17211d;
+    --text-muted: #57655e;
+    --accent: #2b5fa8;
+    --accent-ink: #ffffff;
+    --accent-tint: #e4ecf7;
+    --good: #22794f;
+    --good-tint: #e1f0e6;
+    --mid: #2b5fa8;
+    --mid-tint: #e4ecf7;
+    --warn: #a86c0d;
+    --warn-tint: #f7ecd8;
+    --bad: #ae3c33;
+    --bad-tint: #f5e2df;
+    --shadow: 0 1px 2px rgba(20, 30, 25, 0.06), 0 6px 20px rgba(20, 30, 25, 0.05);
+    --radius: 14px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #11161a;
+      --surface: #171e23;
+      --surface-2: #1d252b;
+      --border: #2b353c;
+      --text: #e8edee;
+      --text-muted: #96a4aa;
+      --accent: #74a9ec;
+      --accent-ink: #0c1720;
+      --accent-tint: #1c2b3c;
+      --good: #57b784;
+      --good-tint: #17291f;
+      --mid: #74a9ec;
+      --mid-tint: #1c2b3c;
+      --warn: #e0aa4b;
+      --warn-tint: #2e2413;
+      --bad: #e58176;
+      --bad-tint: #34201d;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #11161a;
+    --surface: #171e23;
+    --surface-2: #1d252b;
+    --border: #2b353c;
+    --text: #e8edee;
+    --text-muted: #96a4aa;
+    --accent: #74a9ec;
+    --accent-ink: #0c1720;
+    --accent-tint: #1c2b3c;
+    --good: #57b784;
+    --good-tint: #17291f;
+    --mid: #74a9ec;
+    --mid-tint: #1c2b3c;
+    --warn: #e0aa4b;
+    --warn-tint: #2e2413;
+    --bad: #e58176;
+    --bad-tint: #34201d;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .num, .tabular { font-variant-numeric: tabular-nums; }
+  code, .mono {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wrap { max-width: 900px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  header.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  header.top h1 {
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+    text-wrap: balance;
+  }
+  header.top p { margin: 0; color: var(--text-muted); font-size: 0.92rem; max-width: 46ch; }
+  .reset-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .reset-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 30px;
+  }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+  }
+  .stat .n { font-size: 1.6rem; font-weight: 800; letter-spacing: -0.02em; }
+  .stat .l { font-size: 0.76rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+  .stat.accentline { border-top: 3px solid var(--accent); }
+  .stat.goodline { border-top: 3px solid var(--good); }
+  .stat.warnline { border-top: 3px solid var(--warn); }
+  .stat.badline { border-top: 3px solid var(--bad); }
+
+  section { margin-bottom: 36px; }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .section-head h2 {
+    font-size: 1.05rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.01em;
+  }
+  .section-head .sub { font-size: 0.82rem; color: var(--text-muted); }
+
+  .progress-track {
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.3s ease;
+  }
+
+  .batch-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent-tint);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+  .batch-banner .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+
+  .cards { display: flex; flex-direction: column; gap: 10px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .card.attended { opacity: 0.5; }
+  .card.attended .name { text-decoration: line-through; }
+
+  .check-wrap { padding-top: 2px; }
+  .check-wrap input[type="checkbox"] {
+    width: 20px; height: 20px;
+    accent-color: var(--good);
+    cursor: pointer;
+  }
+
+  .card-body { flex: 1; min-width: 0; }
+  .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .name { font-weight: 700; font-size: 0.98rem; }
+  .contact { font-size: 0.8rem; color: var(--text-muted); margin-top: 1px; }
+  .contact a { color: inherit; }
+
+  .badges { display: flex; gap: 6px; align-items: center; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+  .pill {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .pill.good { background: var(--good-tint); color: var(--good); }
+  .pill.mid { background: var(--mid-tint); color: var(--mid); }
+  .pill.warn { background: var(--warn-tint); color: var(--warn); }
+  .pill.bad { background: var(--bad-tint); color: var(--bad); }
+
+  .funnel { display: flex; gap: 3px; margin: 9px 0 8px; }
+  .funnel i {
+    display: block; width: 20px; height: 4px; border-radius: 2px;
+    background: var(--border);
+  }
+  .funnel i.on { background: var(--accent); }
+
+  .notes {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  details.locked-group {
+    background: var(--surface-2);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+  }
+  details.locked-group summary {
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    list-style: none;
+  }
+  details.locked-group summary::-webkit-details-marker { display: none; }
+  details.locked-group summary:before { content: "🔒  "; }
+  .locked-list { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+  .locked-item { font-size: 0.82rem; color: var(--text-muted); display: flex; justify-content: space-between; gap: 10px; }
+  .locked-item b { color: var(--text); font-weight: 600; }
+
+  details.discard-wrap summary {
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 0.95rem;
+    list-style: none;
+    padding: 4px 0;
+  }
+  details.discard-wrap summary::-webkit-details-marker { display: none; }
+  details.discard-wrap summary:after { content: "▸"; float: right; color: var(--text-muted); }
+  details.discard-wrap[open] summary:after { content: "▾"; }
+
+  .table-scroll { overflow-x: auto; margin-top: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.83rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th { color: var(--text-muted); font-weight: 600; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  td.notes-cell { white-space: normal; min-width: 220px; color: var(--text-muted); }
+  tr:last-child td { border-bottom: none; }
+
+  .empty {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-muted);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .empty .big { font-size: 1.1rem; font-weight: 700; color: var(--good); margin-bottom: 4px; }
+
+  footer.note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    margin-top: 30px;
+  }
+
+  @media (max-width: 560px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Cola de leads &middot; prioridad diaria</h1>
+      <p>Datos de <code>opportunities (3).csv</code> &middot; generado 7 ago 2026. Ordenado por etapa del embudo y tiempo sin actualizar, para atender de 5 en 5.</p>
+    </div>
+    <button class="reset-btn" id="resetBtn" type="button">Reiniciar cola</button>
+  </header>
+
+  <div class="stats">
+    <div class="stat accentline">
+      <div class="n num" id="statActive">–</div>
+      <div class="l">Leads activos</div>
+    </div>
+    <div class="stat goodline">
+      <div class="n num" id="statAttended">–</div>
+      <div class="l">Atendidos</div>
+    </div>
+    <div class="stat warnline">
+      <div class="n num" id="statRisk">–</div>
+      <div class="l">En riesgo (15+ días)</div>
+    </div>
+    <div class="stat badline">
+      <div class="n num" id="statDiscard">–</div>
+      <div class="l">Para descartar</div>
+    </div>
+  </div>
+
+  <section>
+    <div class="section-head">
+      <h2>Tu grupo de 5</h2>
+      <span class="sub num" id="groupLabel"></span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="batch-banner" id="batchBanner"><span class="dot"></span><span id="batchBannerText"></span></div>
+    <div class="cards" id="currentBatch"></div>
+  </section>
+
+  <section id="nextSection">
+    <div class="section-head">
+      <h2>Próximos en cola</h2>
+      <span class="sub">Se desbloquean cuando termines el grupo actual</span>
+    </div>
+    <div id="lockedGroups"></div>
+  </section>
+
+  <section>
+    <details class="discard-wrap">
+      <summary>Para descartar &middot; <span id="discardCount">0</span> leads en fase "No viable"</summary>
+      <p class="section-head sub" style="margin:8px 0 0;">No requieren seguimiento activo hoy. Se listan por si quieres limpiar el CRM o confirmar el motivo.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Nombre</th><th>Teléfono</th><th class="num">Días sin act.</th><th>Motivo / nota</th></tr></thead>
+          <tbody id="discardTable"></tbody>
+        </table>
+      </div>
+    </details>
+  </section>
+
+  <footer class="note">
+    Prioridad = etapa del embudo (Legalidad y Oferta/Negociación primero) + días sin actualizar como desempate, para no dejar enfriar leads avanzados. El estado de "atendidos" se guarda en este navegador — si abres la app en otro dispositivo, la cola vuelve a empezar. Cuando actualices el CSV, pide una nueva versión de esta app para refrescar los datos.
+  </footer>
+</div>
+
+<script>
+const DATA = {"total": 127, "activeCount": 73, "discardCount": 54, "active": [{"id": "BxqxtyLM3FL1EvYKEWuh", "nombre": "Deny Mendez", "telefono": "+525582224768", "email": "", "fase": "Legalidad (contrato y escrituración)", "faseCorta": "Legalidad / Cierre", "tier": "good", "peso": 6, "diasActualizacion": 7, "diasEtapa": 7, "notas": "Ya firmo el contrato y dio apartado ahora solo esta gestionando el credito el gestor Dio el apartado y me solicito la informacion de los provedores de la decoracion de la casa, solicitar a rodrigo de nuevo y solicitar lo", "asignado": "", "creado": "2026-07-14", "discard": false, "score": 6007}, {"id": "pkSkbd2AXIm3HNpwJ8Ev", "nombre": "Paola Chávez", "telefono": "+525523046761", "email": "", "fase": "Oferta, Negociación/Cierre", "faseCorta": "Oferta / Negociación", "tier": "good", "peso": 5, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Les gustaron las casas, tienen un tema con las autorizaciones del credito vamos a ver las opciones posibles con jesus y si no se puede vamos a trabajar el credito durante 3 meses pero le gusto mas la casa de la rioja la ", "asignado": "", "creado": "2026-07-31", "discard": false, "score": 5004}, {"id": "zUpcO2Yrbl9QZUXmBnf3", "nombre": "Miguel Angel Jimenez", "telefono": "+522751008041", "email": "", "fase": "Visita confirmada", "faseCorta": "Visita confirmada", "tier": "mid", "peso": 4, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Le dije que vendi otra que me acorde de ellos por que es un caso similar a ver si me contesta Lo atendio Rodrigo clientes con potencial de compra se llama leonardo y quiere volver a ver la propiedad con su hija Le intere", "asignado": "", "creado": "2026-07-13", "discard": false, "score": 4018}, {"id": "O8mKQRSNMMUE5kJT7Dau", "nombre": "Conchita Uriarte", "telefono": "+524773479391", "email": "", "fase": "Solicitud", "faseCorta": "Solicitud", "tier": "mid", "peso": 3, "diasActualizacion": 29, "diasEtapa": 29, "notas": "Se lo pase a mi amigo rodrigo para que la atienda en el mercado abierto No le gustaron los proyectos quiere planta baja y con mas metros de construccion tiene un presupuesto de 4 a 4.5 mdp busca oportunidad con recurso p", "asignado": "", "creado": "2026-07-03", "discard": false, "score": 3029}, {"id": "Rplswk21qFj7paVAOARi", "nombre": "Paola Chavez Turbay", "telefono": "+522299161017", "email": "", "fase": "Solicitud", "faseCorta": "Solicitud", "tier": "mid", "peso": 3, "diasActualizacion": 7, "diasEtapa": 7, "notas": "No puede con esta casa por que le queda muy lejos, le pase el contacto a Rodrigo para aque le de seguimiento en el mercado abierto Me dijo que no habia visto la llamada y me agendo a alas 4:30pm el jueves Le llame no me ", "asignado": "", "creado": "2026-07-28", "discard": false, "score": 3007}, {"id": "SPsl6b7dcS1efUmrYhwn", "nombre": "David Cruz", "telefono": "+522228983632", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 45, "diasEtapa": 45, "notas": "Ahora esta para chiapas que en un mes vuelve a puebla pero si le interesa Le marque me dijo que se encuentra fuera de puebla que para el proximo sabado ya le mande nota de voz para confirmar quiere agendar visita para el", "asignado": "", "creado": "2026-06-21", "discard": false, "score": 2045}, {"id": "FiCafrRBebDk4lrukoyG", "nombre": "Denisse", "telefono": "+522221258465", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 45, "diasEtapa": 45, "notas": "Le mande mensaje para saber si todavia le interesa me dijo que sigue en ciudad de mexico que regresa la proxima semana que el sabado 18 le gustaria verlo que le mande mensaje de preferencia el jueves o viernes para confi", "asignado": "", "creado": "2026-06-20", "discard": false, "score": 2045}, {"id": "fEtbR7BMeCt4dr0NSxud", "nombre": "Viridiana Enriquez", "telefono": "+522227723961", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Le llame se encuentra fuera del pais quiere invertir para dejarlo a rentar por que ella trabaja fuera del pais le voy a mandar mensaje con toda la informacion y que para finales de año ella piensa comprar con infonavit y", "asignado": "", "creado": "2026-07-13", "discard": false, "score": 2024}, {"id": "qR8gK3hlk23HTic2iKIO", "nombre": "Leslie Izchel Ramirez Romero", "telefono": "+522223397606", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Le envie la informacion el dia lunes 20 de julio aqui le pregunte si le habia gustado Me pidio informacion por whatsapp ya se la mande y le mandej mensaje hoy preguntandole si quiere agendar una visita en el proyecto", "asignado": "", "creado": "2026-07-17", "discard": false, "score": 2018}, {"id": "qQhyFCzjzFwFoDMVuOeR", "nombre": "Rosa Maria Angulo Gonzalez", "telefono": "+522761059865", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 10, "diasEtapa": 10, "notas": "Pendiente en llamada me contesto whapp", "asignado": "", "creado": "2026-07-28", "discard": false, "score": 2010}, {"id": "chxSdrBe5MqS8ZTP9wmH", "nombre": "Carmen Galicia Valerio", "telefono": "+522381207636", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 7, "diasEtapa": 7, "notas": "No me contesto le dije que si me permitia llamarle por mensaje Que le llame a las 7", "asignado": "", "creado": "2026-07-31", "discard": false, "score": 2007}, {"id": "oUKX3E7jlwc2TDlXzECD", "nombre": "Jacquelin Camacho", "telefono": "+522225082565", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 7, "diasEtapa": 7, "notas": "Ya la habia contactada la trae el Edgar", "asignado": "", "creado": "2026-07-30", "discard": false, "score": 2007}, {"id": "iMCjeR8MuNyG6pIlzzGg", "nombre": "Nalle Guerra", "telefono": "+522311084552", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 7, "diasEtapa": 7, "notas": "El primer contacto el miercoles 29 de julio me contesto por whapp y me dijo que le mandara la informacion ya se la envie, hoy le hable para preguntarle que le habia parecido", "asignado": "", "creado": "2026-07-30", "discard": false, "score": 2007}, {"id": "Y3NnNYXKagQXdkrbZQvb", "nombre": "Mari Carmen Mendoza Teran", "telefono": "+529721035736", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 6, "diasEtapa": 6, "notas": "Salio a oaxaca no pudo venir a ver la propiedad le mandare la informacion Agendo visita para el dia de mañana a las 3:00pm Le mande mensaje me dejo en visto, le llamare en el segundo contacto por la tarde", "asignado": "", "creado": "2026-07-27", "discard": false, "score": 2006}, {"id": "hEToiSjxggejnLhATDOb", "nombre": "Sergio Jiménez", "telefono": "+522225160576", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Me contesto que le regrese la llamada en 30 minutos Le deje mensaje si no me contesta le voy a llamar en la tarde", "asignado": "", "creado": "2026-08-02", "discard": false, "score": 2004}, {"id": "kwn7HWytNQ7APsBBvGxq", "nombre": "Daniel Gcar", "telefono": "+522224483452", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 4, "diasEtapa": 4, "notas": "No me confirmo la visita y no fue le dare seguimiento a ver si reagendamos Tiene $3,100,000 por infonavit quiere agendar para el dia sabado", "asignado": "", "creado": "2026-07-25", "discard": false, "score": 2004}, {"id": "b1SOX94iAoujQAp3XdvY", "nombre": "Yulen Contreras", "telefono": "+525527531373", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Le llame me dijo que no iba a comprar de momento lo llamare en un mes Me reporte y le pregunte si queria darle continuidad Me comunique con el y visitamos el proyecto el cliente califica bien intentamos venderle una casa", "asignado": "", "creado": "2026-07-08", "discard": false, "score": 2004}, {"id": "zIErMUyt6vnGCCDzv2TE", "nombre": "Ixchel Pau Ramirez", "telefono": "+525516859648", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 2, "diasEtapa": 2, "notas": "Le mande mensaje me dice que quiere comprar para habitar", "asignado": "", "creado": "2026-08-05", "discard": false, "score": 2002}, {"id": "89cxeIWCddzPdkOyLKIK", "nombre": "Ivette Braunschweiger", "telefono": "+525514803697", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 2, "diasEtapa": 2, "notas": "Le encanto lomas vive en cdmx y quiere invertir aca en lomas viene hasta el 15 de septiembre hablarle 5 dias antes Le deje mensaje pidiendo que me acepte una llamada me contesto y me dijo que la llame mañana a las 11am", "asignado": "", "creado": "2026-08-05", "discard": false, "score": 2002}, {"id": "fCToizHR53Q60DDyzBFY", "nombre": "Emely Garza", "telefono": "+527821392789", "email": "", "fase": "Seguimiento", "faseCorta": "Seguimiento", "tier": "warn", "peso": 2, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Me contesto y me esta pidiendo informacion ya le envie todos los datos Le deje mensaje en wapp pidiendole que me acepte una llamada", "asignado": "", "creado": "2026-08-07", "discard": false, "score": 2000}, {"id": "3iUX37TTwB6b8qPKmDlj", "nombre": "Olmos San", "telefono": "+522212514884", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Le hice dos llamadas no me contesto le mande wapp buscando el primer contacto", "asignado": "", "creado": "2026-07-14", "discard": false, "score": 1024}, {"id": "NnnvqqP2S1nrA8IUEE1i", "nombre": "Roberto Corona Oregon", "telefono": "+527471436839", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Le hice dos llamadas no me contesto le envie mensaje buscando el primer contacto", "asignado": "", "creado": "2026-07-13", "discard": false, "score": 1024}, {"id": "7T5BfQ7ZDT59a0HOdYyM", "nombre": "Alejandro CerHu", "telefono": "+522229055431", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Le hice dos llamadas no me contesto le voy a mandar mensaje buscando el contacto con el", "asignado": "", "creado": "2026-07-13", "discard": false, "score": 1024}, {"id": "TAPfeZfVqMhbyNrc6i7H", "nombre": "Laura Alavez", "telefono": "+528110608782", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Le llame dos veces no me contesto y le mande mensaje", "asignado": "", "creado": "2026-07-13", "discard": false, "score": 1024}, {"id": "XguCmJx2RAFEOcug9Uf4", "nombre": "Ramón Jr Hr", "telefono": "+522225810256", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Le enviare los datos y me dijo que cuando andaba en puebla me iba a contactar para visitar la casa Le envie los datos por mensaje me contesto llamada me dijo que iba en carretera le mandare los datos por whatsapp", "asignado": "", "creado": "2026-07-01", "discard": false, "score": 1024}, {"id": "VwlqdCgMa79vEcWINg4v", "nombre": "Daniel Garzón", "telefono": "+522223427687", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Le mande mensaje para preguntarle si cuenta con un recurso adicional o se sale de su presupuesto la casa ya que me puso que tenia 2.8mdp", "asignado": "", "creado": "2026-07-19", "discard": false, "score": 1018}, {"id": "ehu9mUtBs469Ca9IKBAh", "nombre": "Sofia Vallines", "telefono": "+522222179374", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Le hable para preguntarle si cuenta con recursos propio adicionales ya que me puso un presupuesto de 2.8 mdp no le alcanza esta casa vale 3.2", "asignado": "", "creado": "2026-07-19", "discard": false, "score": 1018}, {"id": "OoN8WPSCu0GLQRuoogXM", "nombre": "Hiram", "telefono": "+527851054504", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Me puso presupuesto de 2.8 la casa vale 3.2 no le alcanza le pregunte que si contaba con algun adicional", "asignado": "", "creado": "2026-07-17", "discard": false, "score": 1018}, {"id": "f8MF2oDc0limfCZLMuXz", "nombre": "𝓚𝓪𝓻𝓵𝓪 𝓨𝓾𝓵𝓲𝓪𝓷𝓪 𝓗𝓮𝓻𝓻𝓮𝓻𝓪", "telefono": "+522223374889", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Me dejo sus datos y puso que tiene 2.8 no le alcanza la casa vale 3.2 le pregunte si contaba con algun adicional", "asignado": "", "creado": "2026-07-16", "discard": false, "score": 1018}, {"id": "okHRHK3Z53C0AyZiEyXE", "nombre": "Esmeralda Rodriguez", "telefono": "+522431087689", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Le mande mensaje para preguntarle si cuenta con un recurso adicional o se venta de su presupuesto la casa ya que me puso que tenia 2.8mdp", "asignado": "", "creado": "2026-07-16", "discard": false, "score": 1018}, {"id": "wgpFhz9UFzuRMQ6ekyzm", "nombre": "Jorge González", "telefono": "+525554125806", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Le llame el viernes pasado no me contesto y le mande mensaje y me dejo en visto ahorita le envie mensaje para preguntarle", "asignado": "", "creado": "2026-07-15", "discard": false, "score": 1018}, {"id": "w3fk3VcrevKtE5wvjltU", "nombre": "A L D O E S P I N O Z A", "telefono": "+522229090845", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Le hable el miercoles de la semana pasada y no me contesto, le mande mensaje ese mismo dia y no me contesto, hoy le mande mensaje buscando el contacto si no me contesta le enviare la ifnormacion", "asignado": "", "creado": "2026-07-15", "discard": false, "score": 1018}, {"id": "1MU4ac9leWTVsU52JYjw", "nombre": "Sofia Estefan", "telefono": "+19709889250", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 16, "diasEtapa": 16, "notas": "Le dije que si le einteresaba agendar una visita me dejo en visto llamar despues", "asignado": "", "creado": "2026-07-22", "discard": false, "score": 1016}, {"id": "YcZ9T2SZUnvepJ6trP1K", "nombre": "Marisol", "telefono": "+522212038447", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 16, "diasEtapa": 16, "notas": "Le pregunte si acompletabab por que trae menos de 3 millones", "asignado": "", "creado": "2026-07-22", "discard": false, "score": 1016}, {"id": "F7GfmvV72GHwo6sPwpsg", "nombre": "Adriana Fl Vl", "telefono": "+522221212717", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 16, "diasEtapa": 16, "notas": "No le alcanza trae menos de 3mdp le pregunte si tenia para dar la diferencia con los datos que me dejo en el formulario", "asignado": "", "creado": "2026-07-22", "discard": false, "score": 1016}, {"id": "MOJIc5N4fL0lD6avTVNr", "nombre": "Jenni Cortez", "telefono": "+522215637676", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 16, "diasEtapa": 16, "notas": "No le alcanza le pregunte si podia acompletar por que me puso que tenia menos de 3mdp en sus datos en el formulario", "asignado": "", "creado": "2026-07-21", "discard": false, "score": 1016}, {"id": "hjojGauCxdH96dq7nHCY", "nombre": "Miguel Angel Cervantes", "telefono": "+522218481108", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 16, "diasEtapa": 16, "notas": "Ya le mande whapp no me contesta llamadas", "asignado": "", "creado": "2026-07-21", "discard": false, "score": 1016}, {"id": "RC3VZHJYOp1qUU2grSG2", "nombre": "Ana Marquez", "telefono": "+522221231195", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 10, "diasEtapa": 10, "notas": "No me contesto llamada le deje mensaje de whatsapp buscando el primer contacto", "asignado": "", "creado": "2026-07-28", "discard": false, "score": 1010}, {"id": "IfOOe3cDJXuum4cMPndQ", "nombre": "Karen Guevara Tello", "telefono": "+522223616388", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 10, "diasEtapa": 10, "notas": "Le mande mensaje no me contesto ni la llamada hacer remarketing", "asignado": "", "creado": "2026-07-28", "discard": false, "score": 1010}, {"id": "212kokeCoAnT6HzAjbEn", "nombre": "Leamsi Inactive", "telefono": "+522491528449", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 10, "diasEtapa": 10, "notas": "No me contesto llamada me mando buzon directo y le mande whatsapp no le llegan", "asignado": "", "creado": "2026-07-28", "discard": false, "score": 1010}, {"id": "FgXWeSUWn1L4OCFUMgx9", "nombre": "Ana Rojas Sarabia", "telefono": "+522226159634", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 10, "diasEtapa": 10, "notas": "no pude contactarlo le envie whatsaap buscandoo el primer contacto", "asignado": "", "creado": "2026-07-27", "discard": false, "score": 1010}, {"id": "Py3LWfnsHjRUwLUZTxJH", "nombre": "Gerardo Cuellar Ortega", "telefono": "+522224215337", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 10, "diasEtapa": 10, "notas": "No me contesto le mande mensaje por wapp", "asignado": "", "creado": "2026-07-25", "discard": false, "score": 1010}, {"id": "ijyTWscU1usctjlaM8Oe", "nombre": "Hugo H Alarcon", "telefono": "+525519242929", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 10, "diasEtapa": 10, "notas": "No me contesto llamada le mandare whatsaappp", "asignado": "", "creado": "2026-07-25", "discard": false, "score": 1010}, {"id": "qcXDf7tZgV2jMSuJIIMj", "nombre": "Josa", "telefono": "+522431077664", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 10, "diasEtapa": 10, "notas": "Me dijo que le llamara hoy martes no me contesto llamada le mande mensaje", "asignado": "", "creado": "2026-07-24", "discard": false, "score": 1010}, {"id": "Pm3nUoHBLCOl1dvDdgfq", "nombre": "Griss Sanchez", "telefono": "+525541863276", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 7, "diasEtapa": 7, "notas": "Es asesora le interesa ver las casas por que dice que trae cliente", "asignado": "", "creado": "2026-07-30", "discard": false, "score": 1007}, {"id": "CryKdXJbb6Mz8hVKzsn5", "nombre": "Manuel Arenas", "telefono": "+529331000880", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 7, "diasEtapa": 7, "notas": "Tuve el primer contacto con el el dia miercoles pero no me contesto me dejo en visto me dijo que le enviara los datos se los voy a compartir", "asignado": "", "creado": "2026-07-29", "discard": false, "score": 1007}, {"id": "inGAoMOcbrFY5Qq071Hy", "nombre": "Maythi Gómez Ordaz", "telefono": "+522221646465", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 7, "diasEtapa": 7, "notas": "Le marque no me contesto le mande mensaje wapp", "asignado": "", "creado": "2026-07-29", "discard": false, "score": 1007}, {"id": "yJyY4IdMIrl5MFrvRWEu", "nombre": "Castillo Mariel", "telefono": "+522211658024", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 7, "diasEtapa": 7, "notas": "Le llame me contesto y me colgo", "asignado": "", "creado": "2026-07-29", "discard": false, "score": 1007}, {"id": "ocTyWDDkzrYcIkk9OYWK", "nombre": "Elizabeth Maya Ríos", "telefono": "+525532045904", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Le llame no mostro interes aun asi le mandare todos los datos Le deje mensaje wapp si no me contesta le llamare por la tarde", "asignado": "", "creado": "2026-08-03", "discard": false, "score": 1004}, {"id": "lwxcJxvPGufzOJHvlrsw", "nombre": "Meliza Blanco", "telefono": "+527443241930", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "No me contesta enviarle le envie los datos Le deje mensaje si no me contesta le voy a llamar por la tarde", "asignado": "", "creado": "2026-08-03", "discard": false, "score": 1004}, {"id": "XLMKdVMq7VRmGENVQ1Vn", "nombre": "𝕮𝖔𝖓𝖈𝖆𝖊𝖗", "telefono": "+522223520845", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Le llame y no me contesta Le mande mensaje no me dejo su nombre y tampoco tiene el presupuesto si no me contesta le llamare por la tarde", "asignado": "", "creado": "2026-08-02", "discard": false, "score": 1004}, {"id": "mnrZQbB1tU4jEA9vvBN4", "nombre": "Luis Miguel Manterola Sainz", "telefono": "+522323734246", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "No me contesto llamada le enviare los datos No puedo contactarlo su numero no me aparece en whatsaap marcar por la tarde", "asignado": "", "creado": "2026-08-02", "discard": false, "score": 1004}, {"id": "AgQtzy0PDiJErAj9SP7A", "nombre": "Miguel Angel Santana Velazquez", "telefono": "+522222395712", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Me comenta que va revisar cuanto le presta el infonavit para darle seguimiento y que quiere casa Le deje mensaje si no me contesta le llamare por la tarde", "asignado": "", "creado": "2026-08-02", "discard": false, "score": 1004}, {"id": "XYS0C45Oo9zxuSJq3Z7y", "nombre": "Maru Loranca", "telefono": "+522221252960", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "No me contesto la llamada le enviare los datos por whapp Le deje mensaje si no me contesta le voy a llamar", "asignado": "", "creado": "2026-08-02", "discard": false, "score": 1004}, {"id": "h3S2986lq50jIlK9u4WI", "nombre": "Ericka", "telefono": "+522225310016", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Fuera der area de servicio le mandare los datos por whapp Le deje mensaje si no me contesta le llamare por la tarde", "asignado": "", "creado": "2026-08-02", "discard": false, "score": 1004}, {"id": "6lwQNb5TSO93kubYI5c6", "nombre": "Almaneli Gamez", "telefono": "+522211262608", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Me envio a buzon le mandare los datos por whapp Le mande mensaje si no contesta le llamare por la tarde", "asignado": "", "creado": "2026-08-02", "discard": false, "score": 1004}, {"id": "fmb4BNEMSBE7sbCJLjYh", "nombre": "Willy LVelasco", "telefono": "+522223088110", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Fuera de area de servicio le mandare los datos por whapp Le deje mensaje si no contesta le llamo en la tarde", "asignado": "", "creado": "2026-08-01", "discard": false, "score": 1004}, {"id": "xXfHPPIkYKp727fHe6D7", "nombre": "Vero Reyes", "telefono": "+522225258616", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Le deje mensaje por que no me acepto la llamada", "asignado": "", "creado": "2026-08-01", "discard": false, "score": 1004}, {"id": "e65n1vHSgzqkiYoQVXMJ", "nombre": "Diana Hernandez", "telefono": "+522223231767", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Les he estado hablando y no contestan ellas ya tenian la intencion de apartar Si le gusto queria apartar es su hija Cecilia la casa y para sus dos hijas les intereso el modelo terra con acabados Geneva le mande mensaje h", "asignado": "", "creado": "2026-07-20", "discard": false, "score": 1004}, {"id": "hvRTjtxQU7PZVeTxNNbT", "nombre": "Eduardo Jimenez", "telefono": "+525587326434", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Le he estado llamando pero no me contestan tambien tenian intencion de apartar Le gusto mucho a su esposa querian apartar quedaron de confirmarnos Agendo visita revivi el contacto primero me mando la informacion despues ", "asignado": "", "creado": "2026-07-18", "discard": false, "score": 1004}, {"id": "Sc6iOTJe40haExmdVVel", "nombre": "Itzel Guzman", "telefono": "+529531305596", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 3, "diasEtapa": 3, "notas": "Le mande mensaje no me contesto la llamada", "asignado": "", "creado": "2026-08-04", "discard": false, "score": 1003}, {"id": "Aa8lzxBh3uYiEuQMZxaz", "nombre": "Ronaldo Bocka Marquez", "telefono": "+522227761114", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 2, "diasEtapa": 2, "notas": "Le deje mensaje buscando el primer contacto le pedi que me aceptara una llamada", "asignado": "", "creado": "2026-08-05", "discard": false, "score": 1002}, {"id": "p9PJt1pAxinRWcvpTzwG", "nombre": "Hector Hiram Gahm", "telefono": "+527767679829", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 2, "diasEtapa": 2, "notas": "Le deje mensaje pidiendole que me acepte una llamda", "asignado": "", "creado": "2026-08-05", "discard": false, "score": 1002}, {"id": "LHThnpKcbnzMHj3EeEDF", "nombre": "Juana Peralta De", "telefono": "+529933187738", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 2, "diasEtapa": 2, "notas": "Le deje mensaje en whapp", "asignado": "", "creado": "2026-08-05", "discard": false, "score": 1002}, {"id": "l4eyVtedxYcdqGHHQ4L5", "nombre": "Maria Luisa", "telefono": "+527441135293", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Le deje su un mensaje buscando que me acepte una llamada", "asignado": "", "creado": "2026-08-07", "discard": false, "score": 1000}, {"id": "v2uQMXeDPlpSWkoMEcHp", "nombre": "Edith G Navarrete", "telefono": "+522381115938", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Le mande wapp buscando que me acepte una llamada", "asignado": "", "creado": "2026-08-07", "discard": false, "score": 1000}, {"id": "vHjUe9UtDTZHrTLjKj85", "nombre": "Luis Miguel Hernández Arroyo", "telefono": "+522761001565", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Le deje wapp pidiendo que me acepte una llamda", "asignado": "", "creado": "2026-08-07", "discard": false, "score": 1000}, {"id": "kXcXZoe24aEn2irGNtR4", "nombre": "Shirley Cerqueda", "telefono": "+529513597149", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Le llame y me colgo le mande wapp pidiendo que me acepte una llamada", "asignado": "", "creado": "2026-08-07", "discard": false, "score": 1000}, {"id": "yVX5N6V34uRdBoAAbaBY", "nombre": "Nathalie Maltes", "telefono": "+529932837393", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Le deje mensaje buscando que me acepte una llamada", "asignado": "", "creado": "2026-08-06", "discard": false, "score": 1000}, {"id": "paJFvQYiLeoe8cUKvNUy", "nombre": "Arnulfo Urbina Betancourt", "telefono": "+527472580728", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Le pedi que me acepte una llamada le mande mensaje en wapp", "asignado": "Eduardo Chavarria", "creado": "2026-08-06", "discard": false, "score": 1000}, {"id": "jfbWnnFOUjnJaHTzs58K", "nombre": "Blanca Estrella Ramirez Ramos", "telefono": "+522214079009", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Le deje mensaje en wapp le dije que me acepte una llamada de 5 minutos", "asignado": "", "creado": "2026-08-06", "discard": false, "score": 1000}, {"id": "tLGQFcGfzXOtr4tmQuOE", "nombre": "Maria José Herrera", "telefono": "+522213492360", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Le deje mensaje en wapp pidiendole que me acepte ujna llamada de 5 minutos", "asignado": "", "creado": "2026-08-06", "discard": false, "score": 1000}, {"id": "MNU5NsC02fExoImyuRjP", "nombre": "Marco Antonio Bazán Hernández", "telefono": "+527571082977", "email": "", "fase": "Remarketing", "faseCorta": "Remarketing", "tier": "warn", "peso": 1, "diasActualizacion": 0, "diasEtapa": 0, "notas": "Me habia dejado en visto le volvi a pedir autorizacion para la llamda", "asignado": "", "creado": "2026-08-05", "discard": false, "score": 1000}], "discarded": [{"id": "ogzSYG7eY233jJ5MyHAD", "nombre": "Rocío Rojas", "telefono": "+522222068013", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 51, "diasEtapa": 51, "notas": "", "asignado": "", "creado": "2026-06-17", "discard": true, "score": 51}, {"id": "Gq0BjkwcGsbTc8JGhthC", "nombre": "Alejandro Romo", "telefono": "+525524401956", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 49, "diasEtapa": 49, "notas": "", "asignado": "", "creado": "2026-06-19", "discard": true, "score": 49}, {"id": "YtTRcKWwYV4fODSqbKLN", "nombre": "Roch Maria", "telefono": "+522221890235", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 45, "diasEtapa": 45, "notas": "", "asignado": "Ignacio Sa", "creado": "2026-06-17", "discard": true, "score": 45}, {"id": "27e66ElHtmA40MUM8yF6", "nombre": "Fernando Mojica", "telefono": "+522223389443", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 44, "diasEtapa": 44, "notas": "Me dijo que le interesa mas en cholula, no le encanta la zona pero si puede ir a verla me dijo que para la proxima semana dar seguimiento me dijo que le marcara por la tarde", "asignado": "", "creado": "2026-06-23", "discard": true, "score": 44}, {"id": "rJi6eJqra22WJhhp4cnY", "nombre": "Rolando Cosme", "telefono": "+522271175717", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 44, "diasEtapa": 44, "notas": "Le mande mensaje y no me contesto y tambien le llame", "asignado": "", "creado": "2026-06-21", "discard": true, "score": 44}, {"id": "ccEHLAzxXlGJOoLZYlbq", "nombre": "Roberto De La Luz Trejo", "telefono": "+522215831734", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 44, "diasEtapa": 44, "notas": "le llame dos veces no me contesto le mande audio", "asignado": "", "creado": "2026-06-18", "discard": true, "score": 44}, {"id": "UTfVSC2I31qujth27zCW", "nombre": "David Marquez Leon", "telefono": "+527971049180", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 43, "diasEtapa": 43, "notas": "NO RESPONDIÓ, SEGUIR LLAMANDO", "asignado": "", "creado": "2026-06-17", "discard": true, "score": 43}, {"id": "y94puYWFySxn6fiwCiiZ", "nombre": "Manuel López Herrera", "telefono": "+522212661183", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 36, "diasEtapa": 36, "notas": "basura quiere algo de 2.8mdp", "asignado": "", "creado": "2026-06-28", "discard": true, "score": 36}, {"id": "Kpfyjskozwd8ylX4VjiS", "nombre": "Xhadi Maldo", "telefono": "+522213286265", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 32, "diasEtapa": 32, "notas": "Le marque y me colgo no tenia condiciones de pago", "asignado": "", "creado": "2026-07-04", "discard": true, "score": 32}, {"id": "6M6bUVWqoioiI9swNsYo", "nombre": "Maximo Ruiz Cañongo", "telefono": "+522751037211", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 29, "diasEtapa": 29, "notas": "knhnknk solo tiene un millon en efectivo y no compruebaa ingresos no califica es basura", "asignado": "", "creado": "2026-07-08", "discard": true, "score": 29}, {"id": "Aou9RoqFkLm8peOw93fQ", "nombre": "Indolfo PM", "telefono": "+525552529509", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 29, "diasEtapa": 29, "notas": "Le hice llamadas y le mande mensajes y no me contesto pasar a basura Le mandé whatsaapp", "asignado": "", "creado": "2026-07-04", "discard": true, "score": 29}, {"id": "9LZ2QcVKjziOjJmTDIRv", "nombre": "Samuel Salamanca", "telefono": "+522461092863", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 29, "diasEtapa": 29, "notas": "me comenta que ya oferto por otra casa mandar a la basura no me contesto le hice dos llamadas y envie mensaje por whsapp Le marque y no me contesto, le mande whatsaap y me dijo que le marcara en 1 hora pero le dije que e", "asignado": "", "creado": "2026-07-02", "discard": true, "score": 29}, {"id": "5ZTUB4VqEnnErlEjJ00V", "nombre": "Silvia Noreña", "telefono": "+522221559896", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 29, "diasEtapa": 29, "notas": "Es asesora pasar a basura le llame no me contesto llamada, le mande mensaje y si me contesto estoy buscando continuaer el contacgto", "asignado": "", "creado": "2026-07-01", "discard": true, "score": 29}, {"id": "ksicvL66Prq7FD9Gcmhj", "nombre": "Rodrigolopezherrero414gmail.com", "telefono": "+522212106033", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 29, "diasEtapa": 29, "notas": "Basura penso que valian 1 millon", "asignado": "", "creado": "2026-07-01", "discard": true, "score": 29}, {"id": "oGcbdSFbKOwilYS1zFCh", "nombre": "Mercy De Unanue Bonet", "telefono": "+522223746436", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 29, "diasEtapa": 29, "notas": "me contesto mensaje pasar a basura por que me dijo que esta lejos Le deje mensaje", "asignado": "", "creado": "2026-07-01", "discard": true, "score": 29}, {"id": "Fol60nW9WbggfnZGnCpc", "nombre": "Simona Greco Canto", "telefono": "+522228291173", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 29, "diasEtapa": 29, "notas": "Ella queria comprar con lo que iba recibir de la venta de un terreno pero no lo vendio entonces se cancela la operacion pasamos a basura Ya le hable, quiere agendar para el sabado 10:00 am le queremos vender el del ingen", "asignado": "", "creado": "2026-06-23", "discard": true, "score": 29}, {"id": "8fAKYVYm2DpXSBsAq7GZ", "nombre": "Fernando Rivera", "telefono": "+522222125354", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 29, "diasEtapa": 29, "notas": "Ya nos cancelo dos veces el mismo dia es un lead basura le llame hoy me dijo que para el sabado a las 9:30 no le he confirmado Le llame hoy y me confirmo para el dia viernes me cambio el dia por que saldra de viaje Ferna", "asignado": "", "creado": "2026-06-22", "discard": true, "score": 29}, {"id": "NhvHCZ5Jy759JHzOCQ4C", "nombre": "Rafael Ramírez", "telefono": "+525514742769", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le intente llamar dos veces no me contesto le deje mensaje con la informacion de aspen", "asignado": "", "creado": "2026-07-12", "discard": true, "score": 26}, {"id": "EpKIYVpGspARIEecoaPI", "nombre": "Gabriela Antona", "telefono": "+522227649208", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Me solicito fotos y ubicacion tambien le comparti la descripcion generla Le mande mensjae, no me contesto y le llame y tampoco me contesto sono dos veces y buzon", "asignado": "", "creado": "2026-07-12", "discard": true, "score": 26}, {"id": "coloz9C5lhkDVTdEKG5F", "nombre": "Abraham Suarez", "telefono": "+522224266049", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "No me contesto, le mande mensaje y me habia dejado en visto, le voy a compartir fotos, ubicacion y precio", "asignado": "", "creado": "2026-07-11", "discard": true, "score": 26}, {"id": "Lx8ETa7t2oL9yGQW3yB9", "nombre": "Lorena Vazquez", "telefono": "+522213079257", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "intente llamarle y no tuve exito le envie mensaje con toda la informacion le llame y no me contesto le voy a enviar mensaje con toda la informacion No me contesto, le envie mensaje y me dejo en visto le enviare de nuevo ", "asignado": "", "creado": "2026-07-10", "discard": true, "score": 26}, {"id": "S4eHjwRouGXJNEZcDgMv", "nombre": "Erika Cruz", "telefono": "+522223270783", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le mande mensaje con toda la informacion de aspen le mande mensaje por whatsapp su numero no esta disponible para llamadas", "asignado": "", "creado": "2026-07-07", "discard": true, "score": 26}, {"id": "lwxzxHMzIVYwqdOZDcpM", "nombre": "Regina Matos", "telefono": "+522224658009", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le envie mensaje con toda la informacion de aspen Le llame dos veces y no me contesto le deje audio en whatsapp", "asignado": "", "creado": "2026-07-05", "discard": true, "score": 26}, {"id": "yKwkcbjYwUtU8IUgGS9U", "nombre": "Ale Castro", "telefono": "+522223451414", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le envie mensaje con toda la informacion de aspen Le llame dos veces no me contesto le deje mensaje de whatsapp", "asignado": "Eduardo Chavarria", "creado": "2026-07-05", "discard": true, "score": 26}, {"id": "jJlFW4juH2QrpndFlfwR", "nombre": "Efrain Barrales", "telefono": "+522371069174", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le mande mensaje con toda la informacion de aspen le marque no me contesto le mande mensaje", "asignado": "", "creado": "2026-07-02", "discard": true, "score": 26}, {"id": "hOrKWpcQhFWxCBWHOzRD", "nombre": "Jimmy Perez", "telefono": "+522481038288", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le envie remarketing de las casas de aspen Le llame me dijo que trae varios en vista y que el me regresa la llamada le dije que mensajeemos para saber si yo tambien puedon", "asignado": "", "creado": "2026-07-01", "discard": true, "score": 26}, {"id": "zns7TWB1jXXqwiQrfTIs", "nombre": "Yoli Rodriguez", "telefono": "+522225275739", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le mande mensaje con toda la informacion de aspen no me contesto le mande mensaje", "asignado": "", "creado": "2026-07-01", "discard": true, "score": 26}, {"id": "eMaH8oGjkXuoJlUJgBZM", "nombre": "Alfredo Moreno", "telefono": "+522225544579", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le envie remarketing con info de aspen le marque me dice que tiene 3.5 bancario quiere en la calera o lomas pero de una sola planta y con mas terreno", "asignado": "", "creado": "2026-06-29", "discard": true, "score": 26}, {"id": "mrC9TxjOgR6fBhuZoOjN", "nombre": "Alex Luna", "telefono": "+526672420047", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le envie mensaje con toda la informacion de aspen le marque me contesto su asistente le dije que me dijera cuando pudiera hablar el señor para no triangular", "asignado": "", "creado": "2026-06-26", "discard": true, "score": 26}, {"id": "MeI4a5WbSzDpnOr399Dj", "nombre": "Monii Bello", "telefono": "+522481331826", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "Le mande mensaje de remarketing de aspen con toda la informacion Le llame y le mande mensaje y no me contesto 1er intento", "asignado": "", "creado": "2026-06-26", "discard": true, "score": 26}, {"id": "5BfPHXSAbZ8GN9eR3Zhr", "nombre": "Maria Isabel Zeron", "telefono": "+522227895673", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "No me contesto en nada y le envie mensaje de remarketing de toda la informacion de aspen Le envie remarketing de la rioja depa planta baja no me contesto 2 llamadas ni mensajes", "asignado": "", "creado": "2026-06-24", "discard": true, "score": 26}, {"id": "aBKsfdweXfC5WIC3AZpv", "nombre": "Alejandra", "telefono": "+522225661216", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "le mande remarketing oportunidad en la rioja le mande mensaje me dijo que ya que saliera de audiencia me mandaba mensaje", "asignado": "", "creado": "2026-06-23", "discard": true, "score": 26}, {"id": "A1Q06T7FIHjpqotqlnhM", "nombre": "Claudia Ramirez Gomez", "telefono": "+525517985411", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "No me contesto, le envie mensajes con toda la informacion con fotos y ubicacion le mande remarketing con la rioja", "asignado": "", "creado": "2026-06-21", "discard": true, "score": 26}, {"id": "Palhtfu7twngsSFYC00z", "nombre": "T A N I A S A U C E", "telefono": "+522224862854", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 26, "diasEtapa": 26, "notas": "No me contesto llamadas ni mensajes entonces le envie toda la informacion con fotos, ubicacion y descripcion de aspen le hice remarketing con la rioja Me contesto le interesa verla el martes y quiere comprar con recurso ", "asignado": "", "creado": "2026-06-18", "discard": true, "score": 26}, {"id": "KLVvLoQ1H64L5Hm2mwAd", "nombre": "Jorge Luis Estrada Valeriano", "telefono": "+522224558453", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Le envie las fotos por mensaje se me habia pasado y le deje audio le dije que si queria agendar no me contesto la llamada Tiene 3.5 bancario Santander vive fuera de Puebla quiere la casa para vivir y quiere venir a verla", "asignado": "", "creado": "2026-06-24", "discard": true, "score": 24}, {"id": "3BdsFIJUpJkBFHCmiZ5X", "nombre": "Graciela Flores", "telefono": "+522225968296", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Le mande mensaje por que ya se acerca la fecha que me comento para que valla junto a su pareja a conocer el proyecto Esta en dispocisioonde dar el 40% y lo domas va ser por medio de un credito bancario que en un mes tent", "asignado": "", "creado": "2026-06-19", "discard": true, "score": 24}, {"id": "0sYYm9UnNJXp7908GGVD", "nombre": "Jesùs Carreòn", "telefono": "+522221644020", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 24, "diasEtapa": 24, "notas": "Intente llamarle no me contesto le mandare toda la informacion y lo mandare a no viable por que ya intente muchos contactos le envie mensaje de seguimiento para intentar que agende una visita para conocer el proyecto me ", "asignado": "", "creado": "2026-06-19", "discard": true, "score": 24}, {"id": "H63zdusBqi5rNrCTdayz", "nombre": "JC Segzar", "telefono": "+542211758510", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Tiene 1.8 en infonavit y 1 millon en recurso propio ese es su presupuesto ya con escrituras, le llamare buscano que acuda a un cofinavit y si pueda comprar una casa en aspen", "asignado": "", "creado": "2026-07-14", "discard": true, "score": 18}, {"id": "FAvjH5EKzTLKsYizXczQ", "nombre": "Jorge Gonzalez", "telefono": "+525532841607", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 18, "diasEtapa": 18, "notas": "Compro en otro lugar Fue Jorge con su pareja a ella no le llamo la atencion el proyecto pero tienen la necesidad de comprar una casa con planta abajo asi que si les funciona a Jorge si le intereso y le enviare mensaje un", "asignado": "", "creado": "2026-06-20", "discard": true, "score": 18}, {"id": "ntg5HfX4KNIqY8hfU2bH", "nombre": "Maria Angeles R T", "telefono": "+522226067533", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 16, "diasEtapa": 16, "notas": "No le alcanza le pregunte si podia acompletar por que me puso que tenia menos de 3mdp en sus datos en el formulario", "asignado": "", "creado": "2026-07-22", "discard": true, "score": 16}, {"id": "f07uAFx5wDn8GuJ6EDtx", "nombre": "Guadalupe Laan", "telefono": "+522216260104", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 16, "diasEtapa": 16, "notas": "no tiene whapp y no le suena el telefono me fue imposible contactarlo", "asignado": "", "creado": "2026-07-21", "discard": true, "score": 16}, {"id": "52LxzX164kwrQfcJOMDF", "nombre": "Didier Ibsen Espinosa", "telefono": "+529581130753", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 10, "diasEtapa": 10, "notas": "Le prestan 800 mil infonavit no sabe cuanto tiene infonavit darle seguimeinbto por whatsapp tiene pensado comprar en 2027", "asignado": "", "creado": "2026-07-25", "discard": true, "score": 10}, {"id": "CxkPTTSVhXUJnvCEAXCP", "nombre": "Ross Ma CC", "telefono": "+529511038902", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 10, "diasEtapa": 10, "notas": "no me puedo comunicar dejo mal sus datos", "asignado": "", "creado": "2026-07-23", "discard": true, "score": 10}, {"id": "vjBEY4yiZOOex08pITUW", "nombre": "Aldo Craviotto", "telefono": "+525646892841", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 10, "diasEtapa": 10, "notas": "Hoy le llame y me dijo que no iba a poder realizar la inversionn en un depa de momento lo contacte le hice dos llamadas ya me contesto por whatssap le mande los datos", "asignado": "", "creado": "2026-06-28", "discard": true, "score": 10}, {"id": "tAOqYNGi6oqaMwMUhpxz", "nombre": "Marco Antonio Mora Roa", "telefono": "+525615010230", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 4, "diasEtapa": 4, "notas": "", "asignado": "", "creado": "2026-08-03", "discard": true, "score": 4}, {"id": "v9y4JfAvbba6fnw9S2RJ", "nombre": "Alberto Galvan", "telefono": "+529541391245", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Es informal recibe altos ingresos pero no los registra el estaria dispuesto a dar cantidades fuertes, le dare seguimiento pero no es tan viable", "asignado": "", "creado": "2026-08-01", "discard": true, "score": 4}, {"id": "t2VLZtqCz2OY1UCD5Pwn", "nombre": "Vero Escobar", "telefono": "+522312310922", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Fuera de area de servicio ly noo tiene whapp no me fue posible contatcarlo por whatsapp pero le marcare en la tarde a ver si lo puedo contactar", "asignado": "", "creado": "2026-08-01", "discard": true, "score": 4}, {"id": "sECHWIw7DrKscB7yCVdk", "nombre": "José Cruz Esquivel", "telefono": "+529512439903", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Me colgo pero igual no califica no le alcanza le deje mensaje si no me contesta le llamare en la tarde", "asignado": "", "creado": "2026-07-30", "discard": true, "score": 4}, {"id": "t6ZQvsJD8hPST2WmBFIT", "nombre": "Dalia Guadalupe", "telefono": "+522212403161", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 4, "diasEtapa": 4, "notas": "No califica no trabaja ni tiene dinero y la quiere en un año me dijo por llamada Le deje mensaje si no me contasta le llamare por la tarde", "asignado": "", "creado": "2026-07-30", "discard": true, "score": 4}, {"id": "Tf75u7puBy46h2HYDmw4", "nombre": "Aurora Delgadillo", "telefono": "+529211502269", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 4, "diasEtapa": 4, "notas": "Se enfermo y esta muy mayo, no le van autorizar el credito Le dije que me reportaba con ella para darle seguimiento a su caso   La llevamos a la rioja le gusto mas el departamento para inversion Contesto la informacion q", "asignado": "", "creado": "2026-07-12", "discard": true, "score": 4}, {"id": "qFVfxT0CE43j1sHQujRa", "nombre": "Elizabeth Alonso", "telefono": "+529212764897", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 3, "diasEtapa": 3, "notas": "Me respondio la llamada no sabe lo que necesita y no es viable", "asignado": "", "creado": "2026-08-04", "discard": true, "score": 3}, {"id": "Uc1RwMBmAAkghkGBT6C0", "nombre": "Nipsirc Oscar", "telefono": "+522221133725", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 3, "diasEtapa": 3, "notas": "Le marque y me colgo", "asignado": "", "creado": "2026-08-04", "discard": true, "score": 3}, {"id": "HRtDJGwQqjM29eCidGeD", "nombre": "Víctor Fernando Pineda Loranca", "telefono": "+525517982107", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 3, "diasEtapa": 3, "notas": "Ya tengo el seguimiento con su esposa Ya fueron juntos a ver las propiedades estamos intentando vender la zinfandell", "asignado": "", "creado": "2026-08-02", "discard": true, "score": 3}, {"id": "mknMj64HEVbSIjusrAEq", "nombre": "Chule Rvr", "telefono": "+525555555555", "email": "", "fase": "No viable", "faseCorta": "No viable", "tier": "bad", "peso": 0, "diasActualizacion": 0, "diasEtapa": 0, "notas": "dejo sus datos falsos", "asignado": "", "creado": "2026-08-07", "discard": true, "score": 0}]};
+const STORAGE_KEY = "leadQueue_v1_attended";
+const BATCH_SIZE = 5;
+
+function loadAttended() {
+  try { return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]")); }
+  catch (e) { return new Set(); }
+}
+function saveAttended(set) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify([...set]));
+}
+
+let attended = loadAttended();
+
+function riskLabel(days) {
+  if (days >= 15) return { cls: "bad", text: days + "d sin contacto" };
+  if (days >= 4) return { cls: "warn", text: days + "d sin contacto" };
+  if (days === 0) return { cls: "good", text: "Hoy" };
+  return { cls: "mid", text: days + "d sin contacto" };
+}
+
+function funnelDots(weight) {
+  let out = "";
+  for (let i = 1; i <= 6; i++) {
+    out += `<i class="${i <= weight ? "on" : ""}"></i>`;
+  }
+  return out;
+}
+
+function cardHTML(lead, locked) {
+  const risk = riskLabel(lead.diasActualizacion);
+  const isAttended = attended.has(lead.id);
+  const phone = lead.telefono
+    ? `<a href="tel:${lead.telefono}">${lead.telefono}</a>`
+    : "sin teléfono";
+  return `
+    <div class="card ${isAttended ? "attended" : ""}" data-id="${lead.id}">
+      <div class="check-wrap">
+        <input type="checkbox" ${isAttended ? "checked" : ""} ${locked ? "disabled" : ""}
+          onchange="toggleAttended('${lead.id}', this.checked)" aria-label="Marcar ${lead.nombre} como atendido" />
+      </div>
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="name">${lead.nombre}</div>
+            <div class="contact">${phone}</div>
+          </div>
+          <div class="badges">
+            <span class="pill ${lead.tier}">${lead.faseCorta}</span>
+            <span class="pill ${risk.cls}">${risk.text}</span>
+          </div>
+        </div>
+        <div class="funnel">${funnelDots(lead.peso)}</div>
+        ${lead.notas ? `<div class="notes">${lead.notas}</div>` : ""}
+      </div>
+    </div>`;
+}
+
+function toggleAttended(id, checked) {
+  if (checked) attended.add(id); else attended.delete(id);
+  saveAttended(attended);
+  render();
+}
+window.toggleAttended = toggleAttended;
+
+function render() {
+  const active = DATA.active;
+  const batches = [];
+  for (let i = 0; i < active.length; i += BATCH_SIZE) batches.push(active.slice(i, i + BATCH_SIZE));
+
+  let currentIdx = batches.findIndex(b => b.some(l => !attended.has(l.id)));
+  if (currentIdx === -1) currentIdx = batches.length; // all done
+
+  const attendedCount = active.filter(l => attended.has(l.id)).length;
+  const riskCount = active.filter(l => l.diasActualizacion >= 15).length;
+
+  document.getElementById("statActive").textContent = active.length;
+  document.getElementById("statAttended").textContent = attendedCount;
+  document.getElementById("statRisk").textContent = riskCount;
+  document.getElementById("statDiscard").textContent = DATA.discarded.length;
+  document.getElementById("discardCount").textContent = DATA.discarded.length;
+
+  document.getElementById("progressFill").style.width =
+    active.length ? Math.round((attendedCount / active.length) * 100) + "%" : "0%";
+
+  const currentBatchEl = document.getElementById("currentBatch");
+  const bannerText = document.getElementById("batchBannerText");
+  const groupLabel = document.getElementById("groupLabel");
+  const batchBanner = document.getElementById("batchBanner");
+
+  if (currentIdx >= batches.length) {
+    batchBanner.style.display = "none";
+    groupLabel.textContent = "";
+    currentBatchEl.innerHTML = `<div class="empty"><div class="big">Terminaste tu cola de hoy 🎉</div>Los ${active.length} leads activos están atendidos. Vuelve mañana o revisa "Para descartar".</div>`;
+  } else {
+    batchBanner.style.display = "flex";
+    const batch = batches[currentIdx];
+    const doneInBatch = batch.filter(l => attended.has(l.id)).length;
+    groupLabel.textContent = `Grupo ${currentIdx + 1} de ${batches.length}`;
+    bannerText.textContent = `${doneInBatch} de ${batch.length} atendidos en este grupo — termínalo para desbloquear el siguiente`;
+    currentBatchEl.innerHTML = batch.map(l => cardHTML(l, false)).join("");
+  }
+
+  const lockedWrap = document.getElementById("lockedGroups");
+  const lockedBatches = batches.slice(currentIdx + 1);
+  if (!lockedBatches.length) {
+    lockedWrap.innerHTML = `<p class="sub" style="color:var(--text-muted); font-size:0.85rem;">No hay más grupos pendientes.</p>`;
+  } else {
+    lockedWrap.innerHTML = lockedBatches.map((batch, i) => `
+      <details class="locked-group">
+        <summary>Grupo ${currentIdx + 2 + i} de ${batches.length} &middot; ${batch.length} leads</summary>
+        <div class="locked-list">
+          ${batch.map(l => `<div class="locked-item"><b>${l.nombre}</b><span>${l.faseCorta} &middot; ${l.diasActualizacion}d</span></div>`).join("")}
+        </div>
+      </details>
+    `).join("");
+  }
+
+  document.getElementById("discardTable").innerHTML = DATA.discarded.map(l => `
+    <tr>
+      <td>${l.nombre}</td>
+      <td class="mono">${l.telefono || "—"}</td>
+      <td class="num">${l.diasActualizacion}</td>
+      <td class="notes-cell">${l.notas || "—"}</td>
+    </tr>
+  `).join("");
+}
+
+document.getElementById("resetBtn").addEventListener("click", () => {
+  if (confirm("Esto borra el progreso de 'atendidos' guardado en este navegador. ¿Continuar?")) {
+    attended = new Set();
+    saveAttended(attended);
+    render();
+  }
+});
+
+render();
+</script>
