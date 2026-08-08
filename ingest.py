@@ -82,7 +82,10 @@ def xlsx_to_csv_rows(path):
     wb = openpyxl.load_workbook(path, data_only=True)
     ws = wb.active
     rows_iter = ws.iter_rows(values_only=True)
-    header = [str(h).strip() if h is not None else "" for h in next(rows_iter)]
+    # ojo: no usar .strip() acá — el export en CSV trae columnas con
+    # espacio final ("...actualización ") y build.py busca esas claves
+    # exactas; si las recortamos, el xlsx deja de matchear con el CSV.
+    header = [str(h) if h is not None else "" for h in next(rows_iter)]
     rows = []
     for raw in rows_iter:
         if all(v is None for v in raw):
