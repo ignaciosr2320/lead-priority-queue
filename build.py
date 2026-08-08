@@ -11,12 +11,13 @@ TEMPLATE = "template.html"
 OUT = "index.html"
 
 STAGE_WEIGHT = {
-    "Legalidad (contrato y escrituración)": 6,
-    "Oferta, Negociación/Cierre": 5,
-    "Visita confirmada": 4,
-    "Solicitud": 3,
-    "Seguimiento": 2,
-    "Remarketing": 1,
+    "Legalidad (contrato y escrituración)": 7,
+    "Oferta, Negociación/Cierre": 6,
+    "Visita confirmada": 5,
+    "Solicitud": 4,
+    "Seguimiento": 3,
+    "Remarketing": 2,
+    "Lead nuevo": 1,
     "No viable": 0,
 }
 STAGE_SHORT = {
@@ -26,6 +27,7 @@ STAGE_SHORT = {
     "Solicitud": "Solicitud",
     "Seguimiento": "Seguimiento",
     "Remarketing": "Remarketing",
+    "Lead nuevo": "Lead nuevo",
     "No viable": "No viable",
 }
 STAGE_TIER = {
@@ -35,8 +37,10 @@ STAGE_TIER = {
     "Solicitud": "mid",
     "Seguimiento": "warn",
     "Remarketing": "warn",
+    "Lead nuevo": "warn",
     "No viable": "bad",
 }
+STAGE_COUNT = 7  # etapas activas (sin contar "No viable"), usado para los puntos de avance
 
 
 def parse_dias(s):
