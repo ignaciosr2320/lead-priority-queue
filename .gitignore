@@ -1,1 +1,6 @@
 .DS_Store
+procesados/
+ingest.log
+.ingest.lock
+launchd.out.log
+launchd.err.log
